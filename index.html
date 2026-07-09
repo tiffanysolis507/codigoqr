@@ -1,0 +1,364 @@
+:Perfil Digital y Generador QR - Tiffany Solis:perfil_tiffany_solis.html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil Estudiantil - Tiffany Solis Arroyo</title>
+    <!-- Tailwind CSS para el diseño responsivo de alta gama -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts para tipografías académicas solemnes -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- QRious para la generación interactiva del código QR en un lienzo canvas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        academic: ['Cinzel', 'serif'],
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        colegio: {
+                            navy: '#0b0f19',     /* Azul marino institucional */
+                            gold: '#eab308',     /* Dorado / Amarillo heráldico */
+                            red: '#dc2626',      /* Rojo de los libros del escudo */
+                            cream: '#fcfbf7'     /* Fondo suave aperlado */
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f8fafc;
+        }
+        .text-glow {
+            text-shadow: 0 2px 10px rgba(234, 179, 8, 0.2);
+        }
+        /* Configuración de estilos optimizada para la impresión física de la credencial */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #view-profile, #view-profile * {
+                visibility: visible;
+            }
+            #view-profile {
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%) scale(1.1);
+                border: none !important;
+                box-shadow: none !important;
+                width: 100% !important;
+                max-width: 400px !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <!-- COMPONENTE TOAST DE NOTIFICACIÓN -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 ease-out bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-3 border border-yellow-500/20 pointer-events-none text-xs font-semibold">
+        <div class="p-1 bg-yellow-500/10 rounded text-yellow-400">
+            <i data-lucide="shield-check" class="w-4 h-4 animate-pulse"></i>
+        </div>
+        <span id="toast-message">Proceso completado</span>
+    </div>
+
+    <!-- CABECERA INSTITUCIONAL -->
+    <header class="bg-slate-950 text-white border-b border-yellow-500/30 sticky top-0 z-40 shadow-md no-print">
+        <div class="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3.5">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-500 to-amber-600 p-0.5 shadow-md">
+                    <div class="w-full h-full bg-slate-950 rounded-[9px] flex items-center justify-center text-yellow-400">
+                        <i data-lucide="graduation-cap" class="w-5 h-5"></i>
+                    </div>
+                </div>
+                <div>
+                    <span class="font-academic text-sm sm:text-base tracking-widest text-yellow-400 block font-black text-glow">SAGRADO CORAZÓN</span>
+                    <span class="text-[9px] text-slate-400 uppercase tracking-widest font-black block -mt-0.5">Identificación Digital Estudiantil</span>
+                </div>
+            </div>
+            
+            <!-- INTERRUPTOR DE PANELES (TARJETA / GENERADOR QR) -->
+            <div class="flex bg-slate-900 p-1 rounded-xl text-xs font-bold border border-slate-800">
+                <button onclick="switchView('profile')" id="nav-profile" class="px-4 py-2 rounded-lg bg-yellow-500 text-slate-950 transition-all duration-300">
+                    Ver Tarjeta
+                </button>
+                <button onclick="switchView('generator')" id="nav-generator" class="px-4 py-2 rounded-lg text-slate-400 hover:text-white transition-all duration-300">
+                    Generador QR
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ÁREA CENTRAL DE CONTENIDO -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 py-10 w-full flex items-center justify-center">
+
+        <!-- VISTA EXCLUSIVA A: TARJETA DE PERFIL DIGITAL (LO QUE SE ESCANEA) -->
+        <div id="view-profile" class="w-full max-w-md bg-white border border-slate-200/80 rounded-3xl shadow-2xl overflow-hidden relative transition-all duration-500 transform hover:scale-[1.01]">
+            
+            <!-- Fondo heráldico de la cabecera de la tarjeta -->
+            <div class="h-36 bg-slate-950 relative overflow-hidden flex items-center justify-center">
+                <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#facc15_1.5px,transparent_1.5px)] [background-size:20px_20px]"></div>
+                <!-- Línea tricolor en representación heráldica -->
+                <div class="absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-r from-red-600 via-yellow-400 to-blue-700"></div>
+            </div>
+
+            <!-- ESCUDO OFICIAL DE LA UNIDAD EDUCATIVA -->
+            <div class="flex justify-center -mt-16 relative z-10">
+                <div class="bg-white p-2 rounded-full shadow-lg border border-slate-100 flex items-center justify-center w-32 h-32">
+                    <!-- Imagen del escudo cargada desde logo.png -->
+                    <img id="logo-school" src="logo.png" alt="Logo Sagrado Corazón" 
+                         class="w-full h-full object-contain rounded-full"
+                         onerror="this.style.display='none'; document.getElementById('logo-fallback').style.display='flex'">
+                    
+                    <!-- Fallback elegante por si el archivo logo.png no se ubica temporalmente -->
+                    <div id="logo-fallback" class="hidden w-full h-full flex-col items-center justify-center bg-slate-50 text-slate-300 rounded-full">
+                        <i data-lucide="shield" class="w-12 h-12 text-yellow-500 animate-pulse"></i>
+                        <span class="text-[7px] font-bold text-slate-400 uppercase tracking-widest mt-1">Sin Imagen Escudo</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CUERPO CENTRAL DE INFORMACIÓN -->
+            <div class="px-6 pt-4 pb-8 text-center space-y-6">
+                <div>
+                    <span class="text-[10px] font-extrabold uppercase tracking-[0.25em] text-red-600 bg-red-50 px-3.5 py-1.5 rounded-full border border-red-100 inline-block font-sans">
+                        Estudiante Matriculado
+                    </span>
+                    <h2 class="font-academic text-xs sm:text-sm font-black text-slate-950 mt-4 leading-normal">
+                        Unidad Educativa Fiscomisional<br>
+                        <span class="text-amber-600 text-lg sm:text-xl tracking-wide text-glow">"Sagrado Corazón"</span>
+                    </h2>
+                    <p class="text-[9px] text-slate-400 font-extrabold uppercase tracking-widest mt-1">Esmeraldas - Ecuador</p>
+                </div>
+
+                <!-- FOTOGRAFÍA DE PERFIL DE TIFFANY ENMARCADA (1000119283.jpg) -->
+                <div class="flex justify-center">
+                    <div class="relative group">
+                        <!-- Marco estético con gradiente institucional -->
+                        <div class="absolute -inset-1.5 bg-gradient-to-tr from-slate-950 via-yellow-400 to-red-600 rounded-3xl blur-xs opacity-75 group-hover:opacity-100 transition duration-300"></div>
+                        <div class="relative bg-white p-1 rounded-3xl overflow-hidden w-52 h-56 flex items-center justify-center shadow-lg">
+                            <!-- Foto de Perfil Oficial -->
+                            <img id="avatar-img" src="1000119283.jpg" alt="Solis Arroyo Tiffany" 
+                                 class="w-full h-full object-cover rounded-2xl"
+                                 onerror="this.style.display='none'; document.getElementById('avatar-fallback').style.display='flex'">
+                            
+                            <!-- Fallback elegante si la foto de perfil no se ubica localmente -->
+                            <div id="avatar-fallback" class="hidden w-full h-full flex-col items-center justify-center bg-slate-50 text-slate-400 p-4 rounded-2xl">
+                                <i data-lucide="user-square-2" class="w-16 h-16 text-slate-300 mb-2"></i>
+                                <span class="text-[9px] text-center text-slate-500 leading-normal font-medium">Por favor coloca el archivo <br><strong>1000119283.jpg</strong></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DATOS DE FILIACIÓN DE LA ESTUDIANTE -->
+                <div class="space-y-1 bg-slate-50/80 p-5 rounded-2xl border border-slate-100 shadow-inner">
+                    <p class="text-[9px] text-slate-400 uppercase font-black tracking-widest">Nombres Completos</p>
+                    <h3 class="text-xl font-extrabold text-slate-950 tracking-tight leading-tight">
+                        Solis Arroyo Tiffany
+                    </h3>
+                    <div class="w-16 h-0.5 bg-yellow-500 mx-auto my-3 rounded-full"></div>
+                    <div class="flex items-center justify-center gap-1.5 text-slate-700 text-xs font-bold">
+                        <i data-lucide="layers" class="w-4 h-4 text-amber-600"></i>
+                        <span>Paralelo: <span class="text-amber-600 font-extrabold">2B</span></span>
+                    </div>
+                </div>
+
+                <!-- DATOS INSTITUCIONALES COMPLEMENTARIOS -->
+                <div class="grid grid-cols-2 gap-3 text-left text-xs">
+                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                        <span class="text-[8px] text-slate-400 uppercase block font-black tracking-wider">Período Lectivo</span>
+                        <span class="font-bold text-slate-800">2026 - 2027</span>
+                    </div>
+                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                        <span class="text-[8px] text-slate-400 uppercase block font-black tracking-wider">Provincia</span>
+                        <span class="font-bold text-slate-800">Esmeraldas, EC</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- VISTA B: GENERADOR INTERACTIVO DE CÓDIGO QR -->
+        <div id="view-generator" class="hidden w-full max-w-4xl bg-white border border-slate-200/80 rounded-3xl shadow-2xl p-6 sm:p-8 transition-all duration-500">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+                
+                <!-- PARÁMETROS DE DISEÑO Y ENLACE -->
+                <div class="md:col-span-7 space-y-6">
+                    <div>
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-150 inline-block">Módulo de Enlace Estudiantil</span>
+                        <h2 class="text-2xl font-black text-slate-900 mt-2 font-academic tracking-wide">Vincula tu Identificación Digital</h2>
+                        <p class="text-xs text-slate-500 mt-1">Sube este código HTML a internet (por ejemplo en Netlify) y copia el enlace de tu sitio aquí para generar el QR oficial de Tiffany.</p>
+                    </div>
+
+                    <div class="space-y-4">
+                        <!-- Entrada de Dirección URL del sitio web -->
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-650 mb-1.5 flex justify-between">
+                                Enlace de la Web Publicada
+                                <span class="text-blue-600 font-semibold text-[10px]">URL de Destino</span>
+                            </label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400"><i data-lucide="link" class="w-4 h-4"></i></span>
+                                <input type="url" id="target-url" value="https://sagradocorazon-tiffany.netlify.app" placeholder="https://tusitio.netlify.app"
+                                       class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-yellow-500/20 focus:border-yellow-500 focus:bg-white outline-none transition-all"
+                                       oninput="generateQRCode()">
+                            </div>
+                        </div>
+
+                        <!-- Paleta de Colores Corporativos para el QR -->
+                        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-150 grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Color del QR (Sólido)</label>
+                                <input type="color" id="qr-color-fg" value="#0b0f19" class="w-full h-8 p-1 bg-white border border-slate-200 rounded-lg cursor-pointer animate-pulse" oninput="generateQRCode()">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Color de Fondo</label>
+                                <input type="color" id="qr-color-bg" value="#ffffff" class="w-full h-8 p-1 bg-white border border-slate-200 rounded-lg cursor-pointer" oninput="generateQRCode()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botones de Acción -->
+                    <div class="pt-4 border-t border-slate-100 flex flex-wrap gap-3">
+                        <button onclick="downloadQRImage()" class="flex-grow sm:flex-none bg-slate-950 hover:bg-slate-900 text-white font-bold text-xs px-4 py-3 rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5 border border-slate-800">
+                            <i data-lucide="download" class="w-4 h-4 text-yellow-400"></i> Guardar QR (.png)
+                        </button>
+                        <button onclick="window.print()" class="flex-grow sm:flex-none bg-yellow-500 hover:bg-yellow-600 text-slate-950 font-bold text-xs px-4 py-3 rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5">
+                            <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Tarjeta Física
+                        </button>
+                    </div>
+                </div>
+
+                <!-- PANEL VISUALIZADOR DE CÓDIGO QR EN TIEMPO REAL -->
+                <div class="md:col-span-5 flex flex-col items-center justify-center p-6 bg-slate-50 border border-slate-150 rounded-2xl">
+                    <span class="text-[10px] font-bold uppercase text-slate-400 mb-3 tracking-widest">Vista Previa del QR</span>
+                    
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 inline-block mb-4">
+                        <!-- Canvas QR interactivo -->
+                        <canvas id="qr-canvas"></canvas>
+                    </div>
+
+                    <p class="text-[10px] text-center text-slate-400 max-w-[200px] leading-relaxed">Al escanear este código con cualquier smartphone, se abrirá de forma directa el perfil estudiantil de Tiffany.</p>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <!-- PIE DE PÁGINA -->
+    <footer class="bg-slate-950 text-slate-400 text-center py-6 text-xs border-t border-slate-800 no-print w-full">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p>© 2026 Unidad Educativa Fiscomisional Sagrado Corazón. Esmeraldas, Ecuador.</p>
+            <div class="flex gap-4 font-semibold">
+                <span class="hover:text-yellow-400 cursor-pointer transition-colors">Normativa del Colegio</span>
+                <span class="hover:text-yellow-400 cursor-pointer transition-colors">Soporte Tecnológico</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- LÓGICA DE CONTROL Y GENERACIÓN DINÁMICA -->
+    <script>
+        // Inicializar iconos de Lucide
+        lucide.createIcons();
+
+        const qrCanvas = document.getElementById('qr-canvas');
+
+        // Función para mostrar Toast dinámico
+        function triggerToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').innerText = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 2500);
+        }
+
+        // Alternar paneles de la interfaz (Ficha / Generador)
+        function switchView(view) {
+            const pView = document.getElementById('view-profile');
+            const gView = document.getElementById('view-generator');
+            const navP = document.getElementById('nav-profile');
+            const navG = document.getElementById('nav-generator');
+
+            if (view === 'profile') {
+                pView.classList.remove('hidden');
+                gView.classList.add('hidden');
+                navP.className = "px-4 py-2 rounded-lg bg-yellow-500 text-slate-950 transition-all duration-300";
+                navG.className = "px-4 py-2 rounded-lg text-slate-400 hover:text-white transition-all duration-300";
+                triggerToast("Mostrando Ficha de Alumna");
+            } else {
+                pView.classList.add('hidden');
+                gView.classList.remove('hidden');
+                navP.className = "px-4 py-2 rounded-lg text-slate-400 hover:text-white transition-all duration-300";
+                navG.className = "px-4 py-2 rounded-lg bg-yellow-500 text-slate-950 transition-all duration-300";
+                triggerToast("Cargando Generador de Enlaces QR");
+                generateQRCode();
+            }
+        }
+
+        // Generar Código QR interactivo usando QRious
+        function generateQRCode() {
+            const url = document.getElementById('target-url').value.trim() || "https://sagradocorazon-tiffany.netlify.app";
+            const fg = document.getElementById('qr-color-fg').value;
+            const bg = document.getElementById('qr-color-bg').value;
+
+            new QRious({
+                element: qrCanvas,
+                value: url,
+                size: 180,
+                background: bg,
+                foreground: fg,
+                level: 'H' // Nivel de corrección alto para facilitar el escaneo en impresiones de credenciales
+            });
+        }
+
+        // Exportar el código QR generado en formato de imagen PNG de alta fidelidad
+        function downloadQRImage() {
+            const url = document.getElementById('target-url').value.trim() || "https://sagradocorazon-tiffany.netlify.app";
+            const fg = document.getElementById('qr-color-fg').value;
+            const bg = document.getElementById('qr-color-bg').value;
+
+            const tempCanvas = document.createElement('canvas');
+            new QRious({
+                element: tempCanvas,
+                value: url,
+                size: 600, // Excelente resolución para imprentas o papelería física escolar
+                background: bg,
+                foreground: fg,
+                level: 'H'
+            });
+
+            const link = document.createElement('a');
+            link.download = 'QR_Identidad_Tiffany_Solis.png';
+            link.href = tempCanvas.toDataURL('image/png');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            triggerToast("Código QR descargado en alta definición");
+        }
+
+        // Inicializar código al cargar la pantalla
+        window.onload = function() {
+            generateQRCode();
+        }
+    </script>
+</body>
+</html>
